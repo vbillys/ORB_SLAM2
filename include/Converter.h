@@ -44,6 +44,9 @@ public:
     static cv::Mat toCvMat(const Eigen::Matrix3d &m);
     static cv::Mat toCvMat(const Eigen::Matrix<double,3,1> &m);
     static cv::Mat toCvSE3(const Eigen::Matrix<double,3,3> &R, const Eigen::Matrix<double,3,1> &t);
+    static Eigen::Matrix3f toEigen(const cv::Mat &m);
+    static Eigen::Vector3f toEulerAngles(const Eigen::Matrix3f &m);
+
 
     static Eigen::Matrix<double,3,1> toVector3d(const cv::Mat &cvVector);
     static Eigen::Matrix<double,3,1> toVector3d(const cv::Point3f &cvPoint);

@@ -28,6 +28,7 @@
 #include "ORBextractor.h"
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
+#include <sensor_msgs/LaserScan.h>
 
 #include <mutex>
 
@@ -120,6 +121,8 @@ public:
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
 
+    sensor_msgs::LaserScan mLaserScan;
+    uint mRosSeqRef;
     static long unsigned int nNextId;
     long unsigned int mnId;
     const long unsigned int mnFrameId;
@@ -191,6 +194,7 @@ public:
 
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
+
 
     // SE3 Pose and camera center
     cv::Mat Tcw;

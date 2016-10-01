@@ -39,6 +39,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
 ${PROJECT_SOURCE_DIR}/../../../include
 ${Pangolin_INCLUDE_DIRS}
+/home/linuxmint/catkin_ws/devel/include/foobar
 )
 
 set(LIBS 

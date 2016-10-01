@@ -80,6 +80,23 @@ cv::Mat Converter::toCvMat(const Eigen::Matrix3d &m)
     return cvMat.clone();
 }
 
+Eigen::Matrix3f Converter::toEigen(const cv::Mat &m)
+{
+  Eigen::Matrix3f eigenMat;
+  eigenMat << m.at<float>(0,0) , m.at<float>(0,1), m.at<float>(0,2),
+              m.at<float>(1,0) , m.at<float>(1,1), m.at<float>(1,2),
+              m.at<float>(2,0) , m.at<float>(2,1), m.at<float>(2,2);
+  return eigenMat;
+}
+
+Eigen::Vector3f Converter::toEulerAngles(const Eigen::Matrix3f &m)
+{
+  Eigen::Vector3f ea = m.eulerAngles(0,1,2);
+  //Eigen::Vector3f ea = m.eulerAngles(2,1,0);
+  ea(0);ea(1);ea(2);
+  return ea;
+}
+
 cv::Mat Converter::toCvMat(const Eigen::Matrix<double,3,1> &m)
 {
     cv::Mat cvMat(3,1,CV_32F);

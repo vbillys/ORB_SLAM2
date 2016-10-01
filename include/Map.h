@@ -28,6 +28,8 @@
 #include <mutex>
 
 
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace ORB_SLAM2
 {

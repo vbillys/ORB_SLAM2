@@ -23,6 +23,7 @@
 #include "KeyFrame.h"
 #include <pangolin/pangolin.h>
 #include <mutex>
+#include <Converter.h>
 
 namespace ORB_SLAM2
 {
@@ -85,14 +86,75 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
     const float &w = mKeyFrameSize;
     const float h = w*0.75;
     const float z = w*0.6;
+    static int keyframes_count = 0;
 
     const vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
 
     if(bDrawKF)
     {
+        if (vpKFs.size()>0 && vpKFs.size() != keyframes_count)
+	{
+	  keyframes_count = vpKFs.size();
+	  cv::Mat Rwc(3,3,CV_32F);
+	  cv::Mat twc(3,1,CV_32F);
+	  KeyFrame* lpKF = vpKFs[vpKFs.size()-1];
+	  cv::Mat Tcw = lpKF->GetPose();//.t();
+	  Rwc = Tcw.rowRange(0,3).colRange(0,3);//.t();
+	  //twc = Tcw.rowRange(0,3).col(3);
+	  Eigen::Vector2f cosvall;
+	  cosvall << Rwc.at<float>(0,2), Rwc.at<float>(2,2);
+	  Eigen::Vector2f sinvall;
+	  sinvall << Rwc.at<float>(2,0), Rwc.at<float>(0,0);
+	  float sinval = sinvall(0)/sinvall.norm();
+	  float cosval = cosvall(0)/cosvall.norm();
+	  //Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+	  twc = Rwc.t()*Tcw.rowRange(0,3).col(3);
+	  //cout << "KeyFrame:\n";
+	  //cout << Rwc << endl;
+	  //cout << Converter::toEulerAngles(Converter::toEigen(Rwc)) << endl;
+	  ////cout << atan2(-Rwc.at<float>(0,1),-Rwc.at<float>(2,1))/M_PI*180 << endl;
+	  ////cout << Rwc.at<float>(0,1) << " " << Rwc.at<float>(2,1) << endl;
+	  ////cout << atan2(-Rwc.at<float>(0,1),-Rwc.at<float>(2,1)) << endl;
+	  //cout << sinval << " " << cosval << endl;
+	  ////cout << atan2(sinvall(0)/sinvall.norm(),cosvall(0)/cosvall.norm()) << endl;
+	  ////cout << atan2(sinval,cosval) << endl;
+	  float theta = -asin(sinval);
+	  //cout << theta/M_PI*180 << endl;
+	  if (sinvall(1) < 0)
+	  {
+	    if (sinvall(0) >0)
+	    {
+	      theta = -M_PI-theta;
+	    }
+	    else
+	    {
+	      theta =  M_PI-theta;
+	    }
+	  }
+	  //cout << theta/M_PI*180 << endl;
+	  //cout << twc.at<float>(0) << " " <<  twc.at<float>(1) << " " << -twc.at<float>(2) << endl;
+	  lpKF->mLaserScan.header.stamp = ros::Time::now();
+	  //tf_odom_to_base_orb_.header.stamp = ros::Time::now();
+	  tf_odom_to_base_orb_.setOrigin(tf::Vector3(-twc.at<float>(2),twc.at<float>(0),0));
+	  tf_odom_to_base_orb_.setRotation(tf::createQuaternionFromYaw(theta));
+	  tf_br_.sendTransform(tf::StampedTransform(tf_odom_to_base_orb_, ros::Time::now(), "odom", "base_orb"));
+	  ros_graphslam::pose_laser cur_msg;
+	  //cur_msg.pose.header.stamp = ros::Time().now();
+	  cur_msg.pose.header.stamp = lpKF->mLaserScan.header.stamp;
+	  cur_msg.pose.header.frame_id = "/odom";
+	  cur_msg.pose.pose.position.x = -twc.at<float>(2);
+	  cur_msg.pose.pose.position.y = twc.at<float>(0);
+	  cur_msg.pose.pose.orientation = tf::createQuaternionMsgFromYaw(theta);
+	  cur_msg.scan  = lpKF->mLaserScan;
+	  mPubPose.publish(cur_msg);
+	  mPubLaserScan.publish(lpKF->mLaserScan);
+	  //tf::createQuaternionMsgFromYaw(0);
+	}
         for(size_t i=0; i<vpKFs.size(); i++)
         {
-            KeyFrame* pKF = vpKFs[i];
+	    KeyFrame* pKF = vpKFs[i];
+
+
             cv::Mat Twc = pKF->GetPoseInverse().t();
 
             glPushMatrix();
@@ -234,7 +296,10 @@ void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M)
         {
             unique_lock<mutex> lock(mMutexCamera);
             Rwc = mCameraPose.rowRange(0,3).colRange(0,3).t();
+            //cout << "CameraPose\n";
+	    //cout << Converter::toEulerAngles(Converter::toEigen(Rwc)) << endl;
             twc = -Rwc*mCameraPose.rowRange(0,3).col(3);
+	    //cout << twc.at<float>(0) << " " <<  twc.at<float>(1) << " " << twc.at<float>(2) << endl;
         }
 
         M.m[0] = Rwc.at<float>(0,0);

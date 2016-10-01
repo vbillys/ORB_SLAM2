@@ -25,6 +25,11 @@
 #include"MapPoint.h"
 #include"KeyFrame.h"
 #include<pangolin/pangolin.h>
+#include<ros/ros.h>
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+//##include"/home/solydk/rosbuild_ws/ros_graphslam/msg_gen/cpp/include/ros_graphslam/pose_laser.h"
+#include"/home/linuxmint/rosbuildws/ros_graphslam/msg_gen/cpp/include/ros_graphslam/pose_laser.h"
 
 #include<mutex>
 
@@ -44,6 +49,10 @@ public:
     void SetCurrentCameraPose(const cv::Mat &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
+
+    ros::Publisher mPubPose, mPubLaserScan;
+    tf::TransformBroadcaster tf_br_;
+    tf::Transform tf_odom_to_base_orb_;
 
 private:
 

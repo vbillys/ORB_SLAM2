@@ -31,6 +31,8 @@
 
 #include<mutex>
 
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace ORB_SLAM2
 {

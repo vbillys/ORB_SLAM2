@@ -34,6 +34,9 @@
 
 #include"../../../include/System.h"
 
+//#include"/home/solydk/rosbuild_ws/ros_graphslam/msg_gen/cpp/include/ros_graphslam/pose_laser.h"
+#include"/media/linuxmint/solydk_home/solydk/rosbuild_ws/ros_graphslam/msg_gen/cpp/include/ros_graphslam/pose_laser.h"
+
 using namespace std;
 
 class ImageGrabber
@@ -41,7 +44,8 @@ class ImageGrabber
 public:
     ImageGrabber(ORB_SLAM2::System* pSLAM):mpSLAM(pSLAM){}
 
-    void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight);
+    //void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight);
+    void GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight, const sensor_msgs::LaserScanConstPtr& msgScan);
 
     ORB_SLAM2::System* mpSLAM;
     bool do_rectify;
@@ -109,11 +113,15 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-    message_filters::Subscriber<sensor_msgs::Image> left_sub(nh, "/camera/left/image_raw", 1);
-    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "camera/right/image_raw", 1);
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
-    message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub);
-    sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2));
+    message_filters::Subscriber<sensor_msgs::Image> left_sub (nh, "/camera/left/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/camera/right/image_raw", 1);
+    message_filters::Subscriber<sensor_msgs::LaserScan> scan_sub(nh, "/scan", 1);
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::LaserScan> sync_pol;
+    message_filters::Synchronizer<sync_pol> sync(sync_pol(10), left_sub,right_sub, scan_sub);
+    sync.registerCallback(boost::bind(&ImageGrabber::GrabStereo,&igb,_1,_2,_3));
+
+    igb.mpSLAM->mpMapDrawer->mPubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/base_scan", 3);
+    igb.mpSLAM->mpMapDrawer->mPubPose= nh.advertise<ros_graphslam::pose_laser> ("/pose_laser", 3);
 
     ros::spin();
 
@@ -130,7 +138,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight)
+void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight, const sensor_msgs::LaserScanConstPtr& msgScan)
 {
     // Copy the ros image message to cv::Mat.
     cv_bridge::CvImageConstPtr cv_ptrLeft;
@@ -160,11 +168,11 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
         cv::Mat imLeft, imRight;
         cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(cv_ptrRight->image,imRight,M1r,M2r,cv::INTER_LINEAR);
-        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec());
+        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec(), *msgScan);
     }
     else
     {
-        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
+        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec(), *msgScan);
     }
 
 }

@@ -112,7 +112,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
+//cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
+  cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan)
 {
     if(mSensor!=STEREO)
     {
@@ -154,10 +155,11 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     }
     }
 
-    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
+    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp, laserscan);
 }
 
-cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
+//cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
+cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp, const uint &seq)
 {
     if(mSensor!=RGBD)
     {
@@ -199,7 +201,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     }
     }
 
-    return mpTracker->GrabImageRGBD(im,depthmap,timestamp);
+    return mpTracker->GrabImageRGBD(im,depthmap,timestamp,seq);
 }
 
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
@@ -336,6 +338,23 @@ void System::SaveTrajectoryTUM(const string &filename)
     cout << endl << "trajectory saved!" << endl;
 }
 
+void System::SaveKeyFrameToRos()
+{
+  cout << endl << "Publishing to ROS..." << endl;
+  vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+  sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+  foobar::SeqPoseArray total_msg;
+  mpMapDrawer->mPubPose.publish(total_msg);
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+       // pKF->SetPose(pKF->GetPose()*Two);
+
+        if(pKF->isBad())
+            continue;
+    }
+}
 
 void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 {

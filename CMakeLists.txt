@@ -37,6 +37,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+/home/linuxmint/catkin_ws/devel/include/foobar
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -63,7 +64,12 @@ src/Initializer.cc
 src/Viewer.cc
 )
 
+#link_directories("/opt/ros/indigo/lib")
+
 target_link_libraries(${PROJECT_NAME}
+  boost_system
+  /opt/ros/indigo/lib/libtf.so
+  /opt/ros/indigo/lib/libroscpp.so
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
@@ -75,23 +81,23 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
-add_executable(rgbd_tum
-Examples/RGB-D/rgbd_tum.cc)
-target_link_libraries(rgbd_tum ${PROJECT_NAME})
+#add_executable(rgbd_tum
+#Examples/RGB-D/rgbd_tum.cc)
+#target_link_libraries(rgbd_tum ${PROJECT_NAME} )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
-add_executable(stereo_kitti
-Examples/Stereo/stereo_kitti.cc)
-target_link_libraries(stereo_kitti ${PROJECT_NAME})
+#add_executable(stereo_kitti
+#Examples/Stereo/stereo_kitti.cc)
+#target_link_libraries(stereo_kitti ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 
 add_executable(mono_tum
 Examples/Monocular/mono_tum.cc)
-target_link_libraries(mono_tum ${PROJECT_NAME})
+target_link_libraries(mono_tum ${PROJECT_NAME} )
 
 add_executable(mono_kitti
 Examples/Monocular/mono_kitti.cc)
-target_link_libraries(mono_kitti ${PROJECT_NAME})
+target_link_libraries(mono_kitti ${PROJECT_NAME} )
 
