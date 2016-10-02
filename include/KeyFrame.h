@@ -29,6 +29,7 @@
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/Pose2D.h>
 
 #include <mutex>
 
@@ -122,6 +123,7 @@ public:
 public:
 
     sensor_msgs::LaserScan mLaserScan;
+    geometry_msgs::Pose2D mRosPose2D;
     uint mRosSeqRef;
     static long unsigned int nNextId;
     long unsigned int mnId;

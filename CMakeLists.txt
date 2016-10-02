@@ -43,6 +43,7 @@ ${Pangolin_INCLUDE_DIRS}
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(${PROJECT_NAME} SHARED
+src/Converter.cc
 src/System.cc
 src/Tracking.cc
 src/LocalMapping.cc
@@ -50,7 +51,7 @@ src/LoopClosing.cc
 src/ORBextractor.cc
 src/ORBmatcher.cc
 src/FrameDrawer.cc
-src/Converter.cc
+#src/Converter.cc
 src/MapPoint.cc
 src/KeyFrame.cc
 src/Map.cc

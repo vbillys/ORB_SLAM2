@@ -30,6 +30,7 @@
 #include "KeyFrame.h"
 #include "ORBextractor.h"
 #include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/Pose2D.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -51,7 +52,7 @@ public:
 
     // Constructor for stereo cameras.
     //Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const sensor_msgs::LaserScan &laserscan);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const sensor_msgs::LaserScan &laserscan, const geometry_msgs::Pose2D &amcl_pose);
 
     // Constructor for RGB-D cameras.
     //Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
@@ -191,7 +192,9 @@ public:
     static bool mbInitialComputations;
 
     sensor_msgs::LaserScan mLaserScan;
+    geometry_msgs::Pose2D mRosPose2D;
     uint mRosSeqRef;
+    cv::Mat mOw; //==mtwc
 
 private:
 
@@ -210,7 +213,7 @@ private:
     cv::Mat mRcw;
     cv::Mat mtcw;
     cv::Mat mRwc;
-    cv::Mat mOw; //==mtwc
+    //cv::Mat mOw; //==mtwc
 };
 
 }// namespace ORB_SLAM

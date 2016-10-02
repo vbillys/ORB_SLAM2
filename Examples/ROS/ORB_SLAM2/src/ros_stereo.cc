@@ -30,6 +30,8 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+#include <tf/transform_listener.h>
+
 #include<opencv2/core/core.hpp>
 
 #include"../../../include/System.h"
@@ -50,6 +52,7 @@ public:
     ORB_SLAM2::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
+    tf::TransformListener tf_listener;
 };
 
 int main(int argc, char **argv)
@@ -163,16 +166,34 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
         return;
     }
 
+    tf::StampedTransform transform;
+    geometry_msgs::Pose2D pose_from_tf;
+    if ( false == mpSLAM->mbLocalizationMode)
+    {
+	    try
+	    {
+	      tf_listener.lookupTransform("odom","base_link",ros::Time(0), transform);
+	      pose_from_tf.x = transform.getOrigin().x();
+	      pose_from_tf.y = transform.getOrigin().y();
+	      pose_from_tf.theta = tf::getYaw(transform.getRotation());
+	      ROS_INFO_STREAM(pose_from_tf);
+	    }
+	    catch (tf::TransformException ex)
+	    {
+	      ROS_ERROR("%s",ex.what());
+	    }
+    }
+
     if(do_rectify)
     {
         cv::Mat imLeft, imRight;
         cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(cv_ptrRight->image,imRight,M1r,M2r,cv::INTER_LINEAR);
-        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec(), *msgScan);
+        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec(), *msgScan, pose_from_tf);
     }
     else
     {
-        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec(), *msgScan);
+        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec(), *msgScan, pose_from_tf);
     }
 
 }

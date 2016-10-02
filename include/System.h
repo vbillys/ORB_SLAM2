@@ -60,6 +60,7 @@ public:
         STEREO=1,
         RGBD=2
     };
+    bool mbLocalizationMode;
 
 public:
     MapDrawer* mpMapDrawer;
@@ -71,7 +72,8 @@ public:
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     //cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp);
-    cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan);
+    //cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan);
+    cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan, const geometry_msgs::Pose2D &amcl_pose);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.

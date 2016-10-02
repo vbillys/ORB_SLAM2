@@ -31,7 +31,7 @@ namespace ORB_SLAM2
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer):mSensor(sensor),mbReset(false),mbActivateLocalizationMode(false),
-        mbDeactivateLocalizationMode(false)
+        mbDeactivateLocalizationMode(false), mbLocalizationMode(false)
 {
     // Output welcome message
     cout << endl <<
@@ -113,7 +113,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 }
 
 //cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
-  cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan)
+  //cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan)
+  cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const sensor_msgs::LaserScan &laserscan, const geometry_msgs::Pose2D &amcl_pose)
 {
     if(mSensor!=STEREO)
     {
@@ -136,12 +137,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
             mpTracker->InformOnlyTracking(true);
             mbActivateLocalizationMode = false;
+            mbLocalizationMode = true;
         }
         if(mbDeactivateLocalizationMode)
         {
             mpTracker->InformOnlyTracking(false);
             mpLocalMapper->Release();
             mbDeactivateLocalizationMode = false;
+            mbLocalizationMode = false;
         }
     }
 
@@ -155,7 +158,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
     }
 
-    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp, laserscan);
+    return mpTracker->GrabImageStereo(imLeft,imRight,timestamp, laserscan, amcl_pose);
 }
 
 //cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)

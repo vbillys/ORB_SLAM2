@@ -86,6 +86,8 @@ void Viewer::Run()
 
     pangolin::OpenGlMatrix Twc;
     Twc.SetIdentity();
+    pangolin::OpenGlMatrix RefTwc;
+    RefTwc.SetIdentity();
 
     cv::namedWindow("ORB-SLAM2: Current Frame");
 
@@ -98,6 +100,7 @@ void Viewer::Run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         mpMapDrawer->GetCurrentOpenGLCameraMatrix(Twc);
+        mpMapDrawer->GetCurrentOpenGLRefMatrix(RefTwc);
 
         if(menuFollowCamera && bFollow)
         {
@@ -128,6 +131,7 @@ void Viewer::Run()
         d_cam.Activate(s_cam);
         glClearColor(1.0f,1.0f,1.0f,1.0f);
         mpMapDrawer->DrawCurrentCamera(Twc);
+        mpMapDrawer->DrawCurrentRef(RefTwc);
         if(menuShowKeyFrames || menuShowGraph)
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph);
         if(menuShowPoints)

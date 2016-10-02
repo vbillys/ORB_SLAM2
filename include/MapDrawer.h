@@ -46,9 +46,12 @@ public:
     void DrawMapPoints();
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph);
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
+    void DrawCurrentRef(pangolin::OpenGlMatrix &Twc);
     void SetCurrentCameraPose(const cv::Mat &Tcw);
+    void SetCurrentRefPose(const cv::Mat &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
+    void GetCurrentOpenGLRefMatrix(pangolin::OpenGlMatrix &M);
 
     ros::Publisher mPubPose, mPubLaserScan;
     tf::TransformBroadcaster tf_br_;
@@ -64,8 +67,10 @@ private:
     float mCameraLineWidth;
 
     cv::Mat mCameraPose;
+    cv::Mat mRefPose;
 
     std::mutex mMutexCamera;
+    std::mutex mMutexRef;
 };
 
 } //namespace ORB_SLAM

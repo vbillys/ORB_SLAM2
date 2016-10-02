@@ -97,6 +97,37 @@ Eigen::Vector3f Converter::toEulerAngles(const Eigen::Matrix3f &m)
   return ea;
 }
 
+
+Eigen::Vector3f Converter::toEigenPose2D(const cv::Mat &m)
+{
+  Eigen::Vector3f pose;
+	  cv::Mat Rcr(3,3,CV_32F);
+	  cv::Mat tcr(3,1,CV_32F);
+	  Rcr = m.rowRange(0,3).colRange(0,3);//.t();
+	  Eigen::Vector2f cosvall;
+	  cosvall << Rcr.at<float>(0,2), Rcr.at<float>(2,2);
+	  Eigen::Vector2f sinvall;
+	  sinvall << Rcr.at<float>(2,0), Rcr.at<float>(0,0);
+	  float sinval = sinvall(0)/sinvall.norm();
+	  //float cosval = cosvall(0)/cosvall.norm();
+	  tcr = Rcr.t()*m.rowRange(0,3).col(3);
+	  float theta = -asin(sinval);
+	  if (sinvall(1) < 0)
+	  {
+	    if (sinvall(0) >0)
+	    {
+	      theta = -M_PI-theta;
+	    }
+	    else
+	    {
+	      theta =  M_PI-theta;
+	    }
+	  }
+  pose << -tcr.at<float>(2) , tcr.at<float>(0) , theta;
+  return pose;
+}
+
+
 cv::Mat Converter::toCvMat(const Eigen::Matrix<double,3,1> &m)
 {
     cv::Mat cvMat(3,1,CV_32F);

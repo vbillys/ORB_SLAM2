@@ -165,7 +165,7 @@ void Tracking::SetViewer(Viewer *pViewer)
 
 
 //cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
-  cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, const sensor_msgs::LaserScan & laserscan)
+  cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, const sensor_msgs::LaserScan & laserscan, const geometry_msgs::Pose2D amcl_pose)
 {
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
@@ -197,7 +197,7 @@ void Tracking::SetViewer(Viewer *pViewer)
         }
     }
 
-    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, laserscan);
+    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, laserscan, amcl_pose);
 
     Track();
 
@@ -278,6 +278,8 @@ void Tracking::Track()
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
 
+    bool bOKMM = false;
+    bool bOKReloc = false;
     if(mState==NOT_INITIALIZED)
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD)
@@ -353,8 +355,8 @@ void Tracking::Track()
                     // If relocalization is sucessfull we choose that solution, otherwise we retain
                     // the "visual odometry" solution.
 
-                    bool bOKMM = false;
-                    bool bOKReloc = false;
+                    //bool bOKMM = false;
+                    //bool bOKReloc = false;
                     vector<MapPoint*> vpMPsMM;
                     vector<bool> vbOutMM;
                     cv::Mat TcwMM;
@@ -434,6 +436,7 @@ void Tracking::Track()
                 mVelocity = cv::Mat();
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+        mpMapDrawer->SetCurrentRefPose(mCurrentFrame.mpReferenceKF->GetPose());
 
             // Clean temporal point matches
             for(int i=0; i<mCurrentFrame.N; i++)
@@ -487,10 +490,52 @@ void Tracking::Track()
         mLastFrame = Frame(mCurrentFrame);
     }
 
+    if (OK == mState) 
+    {
+	    std::cout << std::endl << "Tracking recall keyframe pose: " << mpReferenceKF->mRosPose2D << std::endl;
+	    std::cout << std::endl << "Flags: mbVO " << mbVO << " bOKMM " << bOKMM << " bOKReloc " << bOKReloc << std::endl;
+    }
+    else
+    {
+	std::cout << std::endl << "LOST! " << std::endl;
+    }
+
     // Store frame pose information to retrieve the complete camera trajectory afterwards.
     if(!mCurrentFrame.mTcw.empty())
     {
         cv::Mat Tcr = mCurrentFrame.mTcw*mCurrentFrame.mpReferenceKF->GetPoseInverse();
+	  //cv::Mat Rcr(3,3,CV_32F);
+	  //cv::Mat tcr(3,1,CV_32F);
+	  //Rcr = Tcr.rowRange(0,3).colRange(0,3);//.t();
+	  //Eigen::Vector2f cosvall;
+	  //cosvall << Rcr.at<float>(0,2), Rcr.at<float>(2,2);
+	  //Eigen::Vector2f sinvall;
+	  //sinvall << Rcr.at<float>(2,0), Rcr.at<float>(0,0);
+	  //float sinval = sinvall(0)/sinvall.norm();
+	  ////float cosval = cosvall(0)/cosvall.norm();
+	  //tcr = Rcr.t()*Tcr.rowRange(0,3).col(3);
+	  //float theta = -asin(sinval);
+	  //if (sinvall(1) < 0)
+	  //{
+	  //  if (sinvall(0) >0)
+	  //  {
+	  //    theta = -M_PI-theta;
+	  //  }
+	  //  else
+	  //  {
+	  //    theta =  M_PI-theta;
+	  //  }
+	  //}
+	//std::cout << std::endl << "Tcr computed: " << -tcr.at<float>(2) << " " << tcr.at<float>(0) << " " << theta*180/M_PI << std::endl;
+        Eigen::Vector3f tcr_computed = Converter::toEigenPose2D(Tcr);
+        Eigen::Vector3f tcw_computed = Converter::toEigenPose2D(mCurrentFrame.mTcw);
+        Eigen::Vector3f tcwref_computed = Converter::toEigenPose2D(mCurrentFrame.mpReferenceKF->GetPose());
+	std::cout << std::endl << "Tcr computed: " << tcr_computed(0) << " " << tcr_computed(1) << " " << tcr_computed(2) << std::endl;
+	std::cout << std::endl << "Tcw computed: " << tcw_computed(0) << " " << tcw_computed(1) << " " << tcw_computed(2) << std::endl;
+	std::cout << std::endl << "Tcwref computed: " << tcwref_computed(0) << " " << tcwref_computed(1) << " " << tcwref_computed(2) << std::endl;
+	//std::cout << std::endl << "Current Frame Tcr: " << Tcr << std::endl;
+	//std::cout << std::endl << "Current Frame Tcw: " << mCurrentFrame.mTcw << std::endl;
+	//std::cout << std::endl << "Current Frame mOw: " << mCurrentFrame.mOw << std::endl;
         mlRelativeFramePoses.push_back(Tcr);
         mlpReferences.push_back(mpReferenceKF);
         mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
@@ -557,6 +602,7 @@ void Tracking::StereoInitialization()
         mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+        mpMapDrawer->SetCurrentRefPose(mCurrentFrame.mpReferenceKF->GetPose());
 
         mState=OK;
     }
@@ -732,6 +778,7 @@ void Tracking::CreateInitialMapMonocular()
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+        mpMapDrawer->SetCurrentRefPose(mCurrentFrame.mpReferenceKF->GetPose());
 
     mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
