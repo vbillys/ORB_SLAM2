@@ -28,7 +28,7 @@ namespace ORB_SLAM2
 
 Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath):
     mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking),
-    mbFinishRequested(false), mbFinished(true), mbStopped(false), mbStopRequested(false)
+    mbFinishRequested(false), mbFinished(true), mbStopped(false), mbStopRequested(false), m_loc_request(false)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
@@ -49,6 +49,11 @@ Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer
     mViewpointY = fSettings["Viewer.ViewpointY"];
     mViewpointZ = fSettings["Viewer.ViewpointZ"];
     mViewpointF = fSettings["Viewer.ViewpointF"];
+}
+
+void Viewer::LocalizationRequest()
+{
+  m_loc_request = true;
 }
 
 void Viewer::Run()
@@ -117,12 +122,13 @@ void Viewer::Run()
             bFollow = false;
         }
 
-        if(menuLocalizationMode && !bLocalizationMode)
+        if((m_loc_request || menuLocalizationMode )&& !bLocalizationMode)
         {
             mpSystem->ActivateLocalizationMode();
             bLocalizationMode = true;
+            std::cout << std::endl << "Localization mode activated..." << std::endl;
         }
-        else if(!menuLocalizationMode && bLocalizationMode)
+        else if(!m_loc_request && !menuLocalizationMode && bLocalizationMode)
         {
             mpSystem->DeactivateLocalizationMode();
             bLocalizationMode = false;

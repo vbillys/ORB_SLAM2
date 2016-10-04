@@ -53,7 +53,11 @@ public:
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
     tf::TransformListener tf_listener;
+
+    void initedCallback(const std_msgs::Int16Ptr & msg);
 };
+
+
 
 int main(int argc, char **argv)
 {
@@ -67,10 +71,15 @@ int main(int argc, char **argv)
         return 1;
     }    
 
+    ros::NodeHandle nh;
+    ros::Publisher pubpub = nh.advertise<std_msgs::Int16> ("/visloc_ready", 3);
+    nh.setParam("/visloc/visloc_ready", false);
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
 
     ImageGrabber igb(&SLAM);
+    ros::Subscriber subsub = nh.subscribe("/visloc_inited", 3, &ImageGrabber::initedCallback, &igb);
 
     stringstream ss(argv[3]);
 	ss >> boolalpha >> igb.do_rectify;
@@ -114,7 +123,6 @@ int main(int argc, char **argv)
         cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,igb.M1r,igb.M2r);
     }
 
-    ros::NodeHandle nh;
 
     message_filters::Subscriber<sensor_msgs::Image> left_sub (nh, "/camera/left/image_raw", 1);
     message_filters::Subscriber<sensor_msgs::Image> right_sub(nh, "/camera/right/image_raw", 1);
@@ -125,8 +133,16 @@ int main(int argc, char **argv)
 
     igb.mpSLAM->mpMapDrawer->mPubLaserScan = nh.advertise<sensor_msgs::LaserScan> ("/base_scan", 3);
     igb.mpSLAM->mpMapDrawer->mPubPose= nh.advertise<ros_graphslam::pose_laser> ("/pose_laser", 3);
-
+    //igb.mpSLAM->mp_ros_pub_ready= nh.advertise<std_msgs::Int16> ("/visloc_ready", 3);
+    std_msgs::Int16 dummy_msg;
+    pubpub.publish(dummy_msg);
+    nh.setParam("/visloc/visloc_ready", true);
+    std::cout << std::endl  << "published\n";
+    ros::spinOnce();
+    //igb.mpSLAM->mp_ros_pub_ready.publish(std_msgs::Int16());
     ros::spin();
+
+    nh.setParam("/visloc/visloc_ready", false);
 
     // Stop all threads
     SLAM.Shutdown();
@@ -140,6 +156,13 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+void ImageGrabber::initedCallback(const std_msgs::Int16Ptr & msg)
+{
+   std::cout << std::endl << "got localization request\n";
+   mpSLAM->mpViewer->LocalizationRequest();
+}
+
 
 void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const sensor_msgs::ImageConstPtr& msgRight, const sensor_msgs::LaserScanConstPtr& msgScan)
 {

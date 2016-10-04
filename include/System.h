@@ -36,6 +36,7 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 #include <sensor_msgs/LaserScan.h>
+#include <std_msgs/Int16.h>
 //#include <tf/tf.h>
 //#include <tf/transform_broadcaster.h>
 //#include"/home/solydk/rosbuild_ws/ros_graphslam/msg_gen/cpp/include/ros_graphslam/pose_laser.h"
@@ -64,6 +65,9 @@ public:
 
 public:
     MapDrawer* mpMapDrawer;
+    ros::Publisher mp_ros_pub_ready;
+
+    Viewer* mpViewer;
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);
@@ -148,7 +152,7 @@ private:
     LoopClosing* mpLoopCloser;
 
     // The viewer draws the map and the current camera pose. It uses Pangolin.
-    Viewer* mpViewer;
+    //Viewer* mpViewer;
 
     FrameDrawer* mpFrameDrawer;
     //MapDrawer* mpMapDrawer;

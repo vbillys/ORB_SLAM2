@@ -56,6 +56,7 @@ public:
 
     void Release();
 
+    void LocalizationRequest();
 private:
 
     bool Stop();
@@ -81,6 +82,7 @@ private:
     bool mbStopRequested;
     std::mutex mMutexStop;
 
+    bool m_loc_request;
 };
 
 }
